@@ -16,6 +16,14 @@ rồi nhường đường **trước** khi va chạm. Kết quả được so s�
 | Kịch bản thuyết trình | [`humanoid-dynamic-avoidance/docs/demo_script.md`](humanoid-dynamic-avoidance/docs/demo_script.md) |
 | Dữ liệu | Chỉ dữ liệu mô phỏng tự sinh; không dùng hình ảnh hay dữ liệu thật của người nào |
 
+## Team VNBlife
+
+| Thành viên | GitHub | Vai trò | Phụ trách (code + hỏi đáp) |
+|---|---|---|---|
+| **Đoàn Quang Thắng** (Trưởng nhóm) | [conanWinner](https://github.com/conanWinner) | Tích hợp Unitree G1 + vật cản tĩnh | `sim/` (g1_adapter, scene_builder, runner), `navigation/scan_route.py` |
+| Phạm Minh Hiếu | [hieulovecat](https://github.com/hieulovecat) | Perception + Kalman/TCA | `perception/`, `geometry/`, `tracking/`, `prediction/` |
+| Nguyễn Hữu Chương | – | Planner + đánh giá + thuyết trình | `navigation/controller.py`, `evaluation/`, `docs/` |
+
 Chạy nhanh (Windows PowerShell):
 
 ```powershell

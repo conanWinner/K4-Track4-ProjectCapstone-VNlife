@@ -39,13 +39,19 @@ Chuẩn bị trước: mở sẵn 1 terminal ở `humanoid-dynamic-avoidance`, c
   nhường đường có kế hoạch; tốn ~28 s/robot/ca.
 
 ## 7:00–10:00 · Hỏi đáp — ai trả lời phần nào
+Phân công: **Thắng** (trưởng nhóm; G1, sim, vật cản tĩnh) · **Hiếu** (perception, tracking, prediction) ·
+**Chương** (planner, đánh giá, số liệu, impact). Ai cũng phải nói được luồng tổng thể
+cảm biến → cụm → Kalman → TCA/dCA → FSM.
+
 | Câu hỏi có thể gặp | Người trả lời / ý chính |
 |---|---|
-| Vì sao Kalman mà không chỉ khoảng cách? | Tracking: cần vận tốc để biết *sẽ* gần nhau khi nào; khoảng cách chỉ là hiện tại |
-| Q, R chọn thế nào? | Tracking: R từ nhiễu cảm biến + độ tán cụm; Q gia tốc ngẫu nhiên σ_a = 0.7 m/s²; NIS để kiểm tra |
-| Vì sao chặn margin? | Prediction: Q(τ) ở 3 s cho σ ≈ 2 m > nửa hành lang → robot không bao giờ đi; cap 0.35 m là heuristic |
-| Perception có "ăn gian" GT không? | Sim: chỉ `mj_ray` lên geom group 3; GT chỉ ghi cột `*_eval_only` sau khi planner quyết định |
-| G1 có đi thật không? | G1: pretrained LSTM policy 50 Hz + PD 500 Hz, qpos chỉ ghi khi reset; trôi khi đứng yên → station keeping |
-| Vật cản tĩnh né thế nào? | Navigation: lưới 0.2 m, mỗi tia trúng chặn các ô trong bán kính robot + 0.45 m, A* 8 hướng tới đích, bám waypoint; không có đường → dừng |
-| Dữ liệu có an toàn không? | Toàn bộ do simulator sinh, "người" là khối trụ theo kịch bản; không dùng hình ảnh/dữ liệu thật của ai |
-| Ra đời thật cần gì? | Localization thật, lidar thật, nhiều người, AVOID trái/phải, mô hình người tốt hơn |
+| Vì sao Kalman mà không chỉ khoảng cách? | **Hiếu**: cần vận tốc để biết *sẽ* gần nhau khi nào; khoảng cách chỉ là hiện tại |
+| Q, R chọn thế nào? | **Hiếu**: R từ nhiễu cảm biến + độ tán cụm; Q gia tốc ngẫu nhiên σ_a = 0.7 m/s²; NIS để kiểm tra |
+| Vì sao chặn margin? | **Hiếu**: Q(τ) ở 3 s cho σ ≈ 2 m > nửa hành lang → robot không bao giờ đi; cap 0.35 m là heuristic |
+| Perception có "ăn gian" GT không? | **Hiếu**: chỉ `mj_ray` lên geom group 3; GT chỉ ghi cột `*_eval_only` sau khi planner quyết định |
+| G1 có đi thật không? | **Thắng**: pretrained LSTM policy 50 Hz + PD 500 Hz, qpos chỉ ghi khi reset; trôi khi đứng yên → station keeping |
+| Vật cản tĩnh né thế nào? | **Thắng**: lưới 0.2 m, mỗi tia trúng chặn các ô trong bán kính robot + 0.45 m, A* 8 hướng tới đích, bám waypoint; không có đường → dừng |
+| GO/SLOW/YIELD quyết định thế nào? Đo số liệu ra sao? | **Chương**: TCA ≤ 3 s → SLOW, ≤ 2 s + dCA < margin → YIELD, hysteresis để RESUME; so sánh cặp cùng seed, 5 seed × 7 kịch bản, `scripts/evaluate.py` |
+| Impact tính thế nào? | **Chương**: 20 robot × 40 lượt/ca × 2 ca ≈ 1,600 tình huống/ngày; giả định ghi rõ trong README mục 4 |
+| Dữ liệu có an toàn không? | **Chương**: toàn bộ do simulator sinh, "người" là khối trụ theo kịch bản; không dùng hình ảnh/dữ liệu thật của ai |
+| Ra đời thật cần gì? | **Thắng**: localization thật, lidar thật, nhiều người, AVOID trái/phải, mô hình người tốt hơn |
