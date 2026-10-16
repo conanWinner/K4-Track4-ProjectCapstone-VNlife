@@ -1,0 +1,96 @@
+# Starting defaults — NOT tuned results, NOT safety standards.
+simulation:
+  robot: amr                 # amr | g1   (g1 = Unitree G1 + pretrained policy; amr = cylinder proxy fallback)
+  seed: 42
+  episode_timeout_s: 45.0
+  start_xy: [0.0, 0.0]
+  start_yaw: 0.0
+  goal_xy: [5.0, 0.0]
+
+world:
+  corridor_length_m: 9.0     # x from -1.5 to 7.5
+  corridor_x_min_m: -1.5
+  corridor_half_width_m: 2.5 # walls at y = +/- 2.5
+  wall_thickness_m: 0.1
+  wall_height_m: 1.6
+  perceivable_geom_group: 3  # walls + actor geoms; ray casts only see this group
+  actor_radius_m: 0.25
+  actor_height_m: 1.7
+
+sensor:
+  frequency_hz: 10
+  fov_deg: 180
+  num_rays: 61
+  min_range_m: 0.1
+  max_range_m: 4.0
+  noise_std_m: 0.025
+  dropout_probability: 0.01
+  blackout_s: null           # [t0, t1] sim-time window with no scans (sensor failure demo)
+  mount_height_m: 1.0        # AMR: above base; G1: offset defined by adapter
+  mount_forward_m: 0.1
+
+perception:
+  cluster_gap_m: 0.25        # distance-gap clustering threshold between consecutive hits
+  min_cluster_points: 2
+  max_obstacle_extent_m: 1.2 # larger clusters (walls) are dropped
+  wall_filter_margin_m: 0.15 # drop hits within this distance of known map walls
+  radius_inflation_m: 0.05
+  measurement_sigma_m: 0.10  # floor for R; R = max(sigma^2, dispersion^2) per axis
+
+tracking:
+  sigma_accel_mps2: 0.7
+  init_velocity_sigma_mps: 2.0
+  mahalanobis_gate_sq: 9.21  # chi-square 2 DoF, ~99%
+  min_confirmations: 2       # confirmed after 2 hits within last 3 updates
+  confirmation_window: 3
+  max_misses: 5
+
+prediction:
+  horizon_s: 3.0
+  step_s: 0.1
+  nominal_margin_m: 0.25
+  uncertainty_k: 2.0
+  max_uncertainty_margin_m: 0.35   # cap on k*sqrt(lambda_max): Q(tau) over a 2.5 s horizon alone gives ~2 m sigma
+  approach_speed_eps_mps: 0.02
+
+navigation:
+  max_vx_mps: 0.30           # clip additionally by actual policy command range
+  slow_vx_mps: 0.12
+  max_yaw_rate_rps: 0.40
+  k_yaw: 1.2
+  heading_slowdown_rad: 0.6  # reduce vx when |heading error| larger than this
+  goal_tolerance_m: 0.4
+  stale_scan_timeout_s: 0.3
+  safe_resume_duration_s: 0.6
+  resume_ramp_s: 1.0
+  accel_limit_mps2: 0.5      # slew limit on vx
+  yaw_accel_limit_rps2: 1.5
+  nominal_robot_radius_m: 0.35
+  hold_k_lat: 1.0            # YIELD station keeping: vy = -k * lateral drift (body frame)
+  hold_max_vy_mps: 0.15
+  velocity_filter_tau_s: 0.4 # EMA on measured base velocity (G1 pelvis sways ~0.075 m/s laterally per gait cycle ~0.8 s)
+  slow_tca_s: 3.0            # predictive: SLOW if dca risk but tca beyond yield window (<= horizon_s)
+  yield_tca_s: 2.0
+  reactive:
+    stop_distance_m: 0.9     # reactive baseline: obstacle center ahead closer than this...
+    corridor_half_width_m: 0.6   # ...and laterally inside this half width (body frame)
+
+g1:
+  upstream_repo: https://github.com/unitreerobotics/unitree_rl_gym
+  policy_rate_hz: 50         # VERIFY against upstream config
+  max_vx_mps: 0.5            # VERIFY against training command range
+  fall_height_m: 0.45
+  fall_tilt_rad: 0.8
+
+evaluation:
+  collision_min_duration_s: 0.0
+  false_stop_clearance_m: 1.5   # YIELD while GT obstacle has no conflict within horizon and dca > this -> false stop
+
+# Per-robot overrides merged into this config before the robot is created.
+robot_overrides:
+  g1:
+    navigation:
+      nominal_robot_radius_m: 0.42   # arms swing outside a 0.35 m circle; G1 also brakes ~0.13 m from 0.3 m/s
+
+logging:
+  run_dir: outputs/runs

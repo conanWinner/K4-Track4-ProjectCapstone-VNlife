@@ -1,0 +1,8 @@
+repo: https://github.com/unitreerobotics/unitree_rl_gym
+sha: 276801e46c5d433564f24658bac64f254b7d2d4b
+commit_date: 2025-07-25 18:20:21 +0800
+commit_subject: Merge pull request #67 from Bin-Ro/g1_deploy_cpp
+path: third_party/unitree_rl_gym
+policy: deploy/pre_train/g1/motion.pt
+deploy_config: deploy/deploy_mujoco/configs/g1.yaml
+scene_xml: resources/robots/g1_description/scene.xml

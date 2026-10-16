@@ -1,0 +1,55 @@
+# Actor trajectories. Ground truth here is consumed ONLY by ScenarioController and Evaluator.
+# waypoints: list of [t_s, x, y]; actor moves piecewise-linearly between them, holds before first/after last.
+# seed_jitter: per-seed uniform jitter applied to all waypoint times (+/- start_time_s) and speed scale.
+#
+# Timing rationale (robot cruises at ~0.3 m/s from x=0 toward x=5): the actor starts moving when
+# the robot is ~1.2-1.6 m before the crossing line x=2.5, timed so that a robot that keeps walking
+# would meet the actor in its path. Corridor walls at y=+/-2.5; actor parks at y=+/-2.2.
+scenarios:
+  empty:
+    actor: false
+
+  crossing_slow:
+    # worker walking across at ~0.5 m/s
+    actor: true
+    waypoints: [[4.0, 2.5, -2.2], [12.8, 2.5, 2.2]]
+    seed_jitter: {start_time_s: 0.5, speed_scale: 0.1}
+
+  crossing_fast:
+    # hurried worker / pushed cart at ~0.9 m/s
+    actor: true
+    waypoints: [[5.3, 2.5, -2.2], [10.2, 2.5, 2.2]]
+    seed_jitter: {start_time_s: 0.5, speed_scale: 0.1}
+
+  late_crossing:
+    # actor starts when the robot is already close to the crossing line
+    actor: true
+    waypoints: [[6.0, 2.6, -2.2], [10.4, 2.6, 2.2]]
+    seed_jitter: {start_time_s: 0.3, speed_scale: 0.1}
+
+  sudden_turn:
+    # FAILURE CASE: crosses upward and almost leaves (CV prediction: "receding" -> robot resumes),
+    # then turns back at 1.2 m/s just as the robot reaches the crossing line. The CV Kalman filter
+    # needs several scans to flip its velocity estimate, so the yield comes too late.
+    actor: true
+    waypoints: [[4.0, 2.5, -2.2], [12.0, 2.5, 1.8], [13.5, 2.5, 0.0], [15.3, 2.5, -2.2]]
+    seed_jitter: {start_time_s: 0.3, speed_scale: 0.05}
+
+  sudden_turn_early:
+    # same reversal but while the robot is still yielding far back -> prediction recovers in time
+    actor: true
+    waypoints: [[4.0, 2.5, -2.2], [10.4, 2.5, 1.0], [12.4, 2.5, -1.4], [14.4, 2.5, -2.2]]
+    seed_jitter: {start_time_s: 0.3, speed_scale: 0.05}
+
+  brief_occlusion:
+    # static box between robot and actor: the actor is hidden for part of its approach
+    actor: true
+    occluder: {xy: [1.9, -1.5], size: [0.25, 0.25, 0.8]}   # MuJoCo half-sizes -> 0.5 x 0.5 x 1.6 m
+    waypoints: [[4.0, 2.5, -2.2], [12.8, 2.5, 2.2]]
+    seed_jitter: {start_time_s: 0.5, speed_scale: 0.1}
+
+  interactive:
+    # Actor parked at the side; drag it in the MuJoCo viewer (double-click actor, Ctrl+Right-drag).
+    actor: true
+    interactive: true
+    waypoints: [[0.0, 3.0, -2.0]]
