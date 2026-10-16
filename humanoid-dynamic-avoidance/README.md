@@ -27,9 +27,12 @@ gần nhất (TCA/dCA) → quyết định GO / SLOW / YIELD / RESUME**, so sán
 | crossing_slow (0.5 m/s) | 20% | **100%** | −0.05 → 0.36 |
 | crossing_fast (0.9 m/s) | 0% | **100%** | −0.06 → 0.20 |
 | late_crossing | 0% | **100%** | −0.06 → 0.11 |
-| brief_occlusion | 20% | **100%** | −0.05 → 0.73 |
+| brief_occlusion | 20% | **100%** | −0.05 → 0.73¹ |
 | sudden_turn_early | 0% | **100%** | −0.04 → 0.15 |
 | **sudden_turn (ca lỗi)** | 0% (100% **ngã**) | **0%** | −0.29 → −0.21 |
+
+¹ Clearance tới người. Từ commit `3ae782a`, clearance tính cả hộp che tĩnh nên chạy lại cho **0.57 m**
+(tỉ lệ thành công và time-to-goal không đổi; đã kiểm tra lại G1 seed 0–4).
 
 AMR proxy (hình trụ, cùng pipeline) cho kết quả cùng xu hướng: reactive 0% ở cả 6 kịch bản có người,
 predictive 100% ở 5/6, cả hai 0% ở `sudden_turn`. Bảng đầy đủ (yield count, false stop, sai số dự đoán,
@@ -89,6 +92,9 @@ Các hộp xanh nằm trong `configs/scenarios.yaml` → `obstacle_course.obstac
 Va chạm với hộp cũng được tính trong log, ngoài va chạm với người.
 Kiểm tra G1 (seed 0, 1, 2, 3, 4, 42): 6/6 tới đích, không va chạm/ngã,
 khoảng cách nhỏ nhất 0.52–0.56 m, thời gian tới đích 38.4–40.6 s mô phỏng.
+Chạy lại bằng `scripts/evaluate.py` trên Windows (timeout 45 s, seed 0–4): **4/5** tới đích
+(38.4–39.1 s, clearance 0.56 m); seed 4 không va chạm nhưng kẹt ở trạng thái "không còn đường trống"
+14.2 s và hết giờ cách đích 2.1 m. Khi demo nên dùng `--seed 0`.
 
 Giới hạn: `route_from_scan` hiện chỉ dùng cho **cảnh vật cản tĩnh**, bản đồ không xóa
 điểm đã quan sát và vùng chưa thấy được coi là trống. Khi không tìm được đường, lệnh
@@ -135,6 +141,8 @@ clearance GT (chỉ để đánh giá), va chạm.
 - Perception không đọc pose actor; ground truth chỉ dùng cho scenario và cột `*_eval_only` sau khi planner đã quyết định.
 - G1 chỉ di chuyển bằng pretrained policy qua PD khớp; `qpos` chỉ ghi lúc reset.
 - Detection là tâm bề mặt nhìn thấy, không phải tâm vật. Robot/người xấp xỉ hình tròn (G1: 0.42 m).
+- **Dữ liệu an toàn:** toàn bộ dữ liệu do simulator tự sinh ("người" là một khối trụ điều khiển theo kịch bản).
+  Không dùng camera, hình ảnh hay dữ liệu thật của công nhân, bệnh nhân hoặc sinh viên.
 - Chi tiết: [`docs/known_limitations.md`](docs/known_limitations.md), [`docs/experiments.md`](docs/experiments.md).
 
 ## 8. Cấu trúc
@@ -146,7 +154,7 @@ src/humanoid_avoidance/
   sim/       scene_builder, amr_adapter, g1_adapter, scenario_controller, runner, overlay
   evaluation/ logging/                                       metrics, plots, CSV logger
 scripts/            run_demo.py, evaluate.py, record_demo.py, setup.ps1/.sh
-tests/              127 tests (transforms, kalman, association, tca, planner, metrics, sensor, G1, smoke)
+tests/              130 tests (transforms, kalman, association, tca, planner, metrics, sensor, G1, smoke)
 docs/               architecture, interfaces, unitree_integration, experiments, known_limitations
 outputs/            amr/, g1/ (episodes.csv, comparison.csv/.md, figures/), videos/
 ```

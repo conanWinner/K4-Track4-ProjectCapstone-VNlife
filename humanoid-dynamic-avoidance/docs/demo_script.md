@@ -17,6 +17,14 @@ Chuẩn bị trước: mở sẵn 1 terminal ở `humanoid-dynamic-avoidance`, c
 - Predictive: chỉ vào **đĩa vàng** (track Kalman, mũi tên vận tốc trong nhãn), **gạch cam** (quỹ đạo dự
   đoán), TCA/dCA trên HUD → robot chuyển SLOW/YIELD sớm (vòng đỏ), người đi qua, RESUME → tới đích.
 - Mời giám khảo: `--scenario interactive` → double-click trụ cam, **Ctrl + chuột phải** kéo ngang trước robot.
+- (Tuỳ thời gian, ~1 phút) Vật cản tĩnh: robot tự tìm đường vòng 3 hộp bằng A* trên bản đồ tích luỹ từ tia
+  range, không đọc toạ độ hộp trong YAML. Đích `[6.4, 0]`, mất ~40 s mô phỏng nên chỉ chạy khi còn dư giờ:
+  ```powershell
+  .venv\Scripts\python.exe scripts\run_demo.py --robot g1 --scenario obstacle_course --mode predictive --seed 0
+  ```
+  Đã đo: 4/5 seed tới đích; seed 4 kẹt vì bản đồ chặn hết đường (ca lỗi phụ nếu bị hỏi).
+  Trên Linux dùng `scripts/run_demo_no_hud.py` (tắt chữ HUD do lỗi MuJoCo). Giới hạn: chỉ cho cảnh tĩnh,
+  bản đồ không xoá điểm cũ, vùng chưa thấy coi là trống.
 - Nếu demo trục trặc: chiếu `outputs/demo_backup_g1.mp4`, nói rõ đây là video quay từ sim thật.
 
 ## 5:00–7:00 · Số đo, ca lỗi, trụ cột, impact
@@ -38,4 +46,6 @@ Chuẩn bị trước: mở sẵn 1 terminal ở `humanoid-dynamic-avoidance`, c
 | Vì sao chặn margin? | Prediction: Q(τ) ở 3 s cho σ ≈ 2 m > nửa hành lang → robot không bao giờ đi; cap 0.35 m là heuristic |
 | Perception có "ăn gian" GT không? | Sim: chỉ `mj_ray` lên geom group 3; GT chỉ ghi cột `*_eval_only` sau khi planner quyết định |
 | G1 có đi thật không? | G1: pretrained LSTM policy 50 Hz + PD 500 Hz, qpos chỉ ghi khi reset; trôi khi đứng yên → station keeping |
+| Vật cản tĩnh né thế nào? | Navigation: lưới 0.2 m, mỗi tia trúng chặn các ô trong bán kính robot + 0.45 m, A* 8 hướng tới đích, bám waypoint; không có đường → dừng |
+| Dữ liệu có an toàn không? | Toàn bộ do simulator sinh, "người" là khối trụ theo kịch bản; không dùng hình ảnh/dữ liệu thật của ai |
 | Ra đời thật cần gì? | Localization thật, lidar thật, nhiều người, AVOID trái/phải, mô hình người tốt hơn |
