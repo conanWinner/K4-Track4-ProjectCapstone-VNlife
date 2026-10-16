@@ -8,13 +8,15 @@ Definitions
 goal_reached           final-row goal_distance_m <= navigation.goal_tolerance_m.
 collision              at least one contact event: a run of consecutive rows with contact_flag=1
                        lasting >= evaluation.collision_min_duration_s (0 -> any contact).
-                       contact_flag is robot-body vs actor-geom contact (see robot_actor_contact),
+                       contact_flag covers the actor, static boxes and occluders,
                        so floor / foot contacts are never counted.
 fall                   any row with fall_flag=1 (fall detection itself is done by the robot adapter).
 collision_free_success goal_reached and not collision and not fall.
 min_clearance_m        min over the episode of clearance_gt_m = |p_robot - p_actor_GT| - r_robot -
                        r_actor, i.e. a CIRCLE APPROXIMATION of both bodies (surface distance,
-                       negative = overlap). NaN when the scenario has no actor.
+                       negative = overlap). Static-box clearance uses XY box distance minus
+                       robot radius; the logged value is the minimum across obstacles.
+                       NaN when the scenario has no obstacles.
 time_to_goal_s         first sim time with goal_distance_m <= tolerance minus first logged sim
                        time; NaN if the goal was never reached.
 yield_count            number of entries into nav_state == YIELD.

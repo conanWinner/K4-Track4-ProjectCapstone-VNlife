@@ -75,6 +75,27 @@ Phép tính để thuyết trình — thay số thật của nhà máy khi có:
 
 ## 5. Quick Start (đã xác minh: Windows 11, Python 3.11.7, MuJoCo 3.16.0, torch 2.6.0+cpu)
 
+Demo mới trên Linux: **3 khối hộp**, robot tự chọn đường vòng bằng A* trên bản đồ
+tích lũy từ tia range. Không đưa tọa độ hộp trong YAML vào bộ tìm đường.
+
+```bash
+cd humanoid-dynamic-avoidance
+.venv/bin/python scripts/run_demo_no_hud.py --robot g1 --scenario obstacle_course --mode predictive
+```
+
+Các hộp xanh nằm trong `configs/scenarios.yaml` → `obstacle_course.obstacles`;
+`size` là **nửa kích thước** hộp theo mét. Hộp cần đủ cao để cắt mặt phẳng quét cảm biến.
+Đích của cảnh này là `[6.4, 0]`. Robot giảm tốc khi rẽ, đi vòng hộp và tiếp tục tới đích.
+Va chạm với hộp cũng được tính trong log, ngoài va chạm với người.
+Kiểm tra G1 (seed 0, 1, 2, 3, 4, 42): 6/6 tới đích, không va chạm/ngã,
+khoảng cách nhỏ nhất 0.52–0.56 m, thời gian tới đích 38.4–40.6 s mô phỏng.
+
+Giới hạn: `route_from_scan` hiện chỉ dùng cho **cảnh vật cản tĩnh**, bản đồ không xóa
+điểm đã quan sát và vùng chưa thấy được coi là trống. Khi không tìm được đường, lệnh
+tiến được giảm về 0; G1 vẫn bước tại chỗ và có thể trôi. Cảnh có người đi ngang tiếp tục
+dùng cơ chế giảm tốc/nhường đường cũ. Trình chạy Linux tắt chữ HUD do lỗi MuJoCo;
+các lớp cảm biến, track và quỹ đạo vẫn hiển thị.
+
 ```powershell
 cd humanoid-dynamic-avoidance
 powershell -ExecutionPolicy Bypass -File scripts\setup.ps1   # venv + deps + unitree_rl_gym @ pinned SHA

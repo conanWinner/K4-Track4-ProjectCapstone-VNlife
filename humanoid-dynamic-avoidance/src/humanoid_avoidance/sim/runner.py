@@ -19,6 +19,7 @@ from humanoid_avoidance.config import OUTPUT_DIR, PROJECT_ROOT, _deep_update, lo
 from humanoid_avoidance.evaluation.metrics import episode_metrics, robot_actor_contact
 from humanoid_avoidance.logging.csv_logger import CsvLogger
 from humanoid_avoidance.navigation.controller import NavController
+from humanoid_avoidance.navigation.scan_route import ScanRoute
 from humanoid_avoidance.perception.clustering import cluster_scan
 from humanoid_avoidance.perception.range_sensor import RangeSensor
 from humanoid_avoidance.prediction.risk import predict_track
@@ -103,6 +104,11 @@ def run_episode(cfg: dict, scenario_name: str, mode: str, seed: int, robot_name:
     if scenario_name not in scenarios:
         raise KeyError(f"unknown scenario {scenario_name!r}; choose from {sorted(scenarios)}")
     sc_cfg = scenarios[scenario_name]
+    if "goal_xy" in sc_cfg:
+        goal = np.asarray(sc_cfg["goal_xy"], dtype=float)
+        if goal.shape != (2,) or not np.all(np.isfinite(goal)):
+            raise ValueError("scenario goal_xy must contain two finite coordinates")
+        cfg["simulation"]["goal_xy"] = sc_cfg["goal_xy"]
 
     robot = make_robot(robot_name, cfg)
     nav_cfg = cfg["navigation"]
@@ -125,6 +131,10 @@ def run_episode(cfg: dict, scenario_name: str, mode: str, seed: int, robot_name:
     geomgroup[handles.perceivable_group] = 1
     robot_bodies = robot.robot_body_ids(model)
     r_robot = robot.radius_m
+    if sc_cfg.get("route_from_scan") and sc_cfg.get("actor"):
+        raise ValueError("route_from_scan currently supports static obstacles only")
+    route = ScanRoute(cfg, r_robot) if sc_cfg.get("route_from_scan") and mode == "predictive" else None
+    collision_geoms = handles.actor_geom_ids | handles.obstacle_geom_ids | handles.occluder_geom_ids
     r_actor = float(cfg["world"]["actor_radius_m"])
     sigma_a = float(cfg["tracking"]["sigma_accel_mps2"])
     horizon = float(cfg["prediction"]["horizon_s"])
@@ -191,7 +201,12 @@ def run_episode(cfg: dict, scenario_name: str, mode: str, seed: int, robot_name:
                     v_filt = v_filt + alpha * (rstate.v_world_mps - v_filt)
                 v_filt_t = t
                 rstate.v_world_mps = v_filt.copy()
-                cmd = nav.step(t, rstate, goal_xy, confirmed, dets, last_scan_time)
+                heading_target = None
+                if route is not None:
+                    route.update(scan)
+                    heading_target = route.target(rstate.xy_world_m, goal_xy)
+                cmd = nav.step(t, rstate, goal_xy, [] if route else confirmed,
+                               [] if route else dets, last_scan_time, heading_target)
                 robot.set_command(cmd)
                 t2 = time.perf_counter()
 
@@ -199,6 +214,11 @@ def run_episode(cfg: dict, scenario_name: str, mode: str, seed: int, robot_name:
                 gt = scenario.gt_actor_xy_from_sim(data, handles)
                 clearance = (float(np.linalg.norm(rstate.xy_world_m - gt)) - r_robot - r_actor
                              if gt is not None else float("nan"))
+                for gid in handles.obstacle_geom_ids | handles.occluder_geom_ids:
+                    gap = np.maximum(np.abs(rstate.xy_world_m - data.geom_xpos[gid, :2])
+                                     - model.geom_size[gid, :2], 0.0)
+                    distance = float(np.linalg.norm(gap)) - r_robot
+                    clearance = min(clearance, distance) if np.isfinite(clearance) else distance
                 fall = bool(robot.fallen(model, data))
                 dbg = nav.debug
                 main = None
@@ -247,7 +267,7 @@ def run_episode(cfg: dict, scenario_name: str, mode: str, seed: int, robot_name:
                 if end_time is not None and t >= end_time:
                     break
 
-            if robot_actor_contact(model, data, robot_bodies, handles.actor_geom_ids):
+            if robot_actor_contact(model, data, robot_bodies, collision_geoms):
                 contact_since_log = True
                 overlay.collided = True
 

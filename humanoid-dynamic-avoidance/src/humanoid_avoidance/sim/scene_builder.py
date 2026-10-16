@@ -44,6 +44,7 @@ class SceneHandles:
     occluder_geom_ids: set[int] = field(default_factory=set)
     actor_body_id: int = -1
     actor_height_m: float = 0.0
+    obstacle_geom_ids: set[int] = field(default_factory=set)
 
     def geomgroup_mask(self) -> np.ndarray:
         """uint8 (6,) mask selecting only the perceivable group (for mj_ray / RangeSensor.scan)."""
@@ -128,6 +129,18 @@ def build_scene(robot, cfg: dict, scenario_cfg: dict) -> SceneHandles:
                  group, SCENE_CONTYPE, SCENE_CONAFFINITY)
         occluder_names.append("occluder")
 
+    obstacle_names = []
+    for i, obstacle in enumerate(scenario_cfg.get("obstacles", [])):
+        xy = np.asarray(obstacle["xy"], dtype=float)
+        size = np.asarray(obstacle["size"], dtype=float)
+        if xy.shape != (2,) or size.shape != (3,) or not np.all(np.isfinite(xy)) \
+                or not np.all(np.isfinite(size)) or np.any(size <= 0):
+            raise ValueError("obstacles require finite xy[2] and positive half-sizes[3]")
+        name = f"obstacle_{i}"
+        _add_box(wb, name, [*xy, size[2]], size, [0.2, 0.45, 0.8, 1.0],
+                 group, SCENE_CONTYPE, SCENE_CONAFFINITY)
+        obstacle_names.append(name)
+
     # goal marker: visual only (no collision, not perceivable)
     goal_xy = cfg.get("simulation", {}).get("goal_xy")
     if goal_xy is not None:
@@ -196,4 +209,5 @@ def build_scene(robot, cfg: dict, scenario_cfg: dict) -> SceneHandles:
         occluder_geom_ids={gid(n) for n in occluder_names},
         actor_body_id=actor_body_id,
         actor_height_m=ah,
+        obstacle_geom_ids={gid(n) for n in obstacle_names},
     )

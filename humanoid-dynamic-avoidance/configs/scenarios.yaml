@@ -6,6 +6,15 @@
 # the robot is ~1.2-1.6 m before the crossing line x=2.5, timed so that a robot that keeps walking
 # would meet the actor in its path. Corridor walls at y=+/-2.5; actor parks at y=+/-2.2.
 scenarios:
+  obstacle_course:
+    actor: false
+    route_from_scan: true
+    goal_xy: [6.4, 0.0]
+    obstacles:
+      - {xy: [1.8, 0.0], size: [0.25, 0.25, 0.9]}
+      - {xy: [4.4, -0.9], size: [0.25, 0.3, 0.9]}
+      - {xy: [4.6, 1.8], size: [0.3, 0.25, 0.9]}
+
   empty:
     actor: false
 

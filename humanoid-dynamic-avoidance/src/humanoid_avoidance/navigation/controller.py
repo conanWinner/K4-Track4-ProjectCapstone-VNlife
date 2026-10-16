@@ -116,7 +116,7 @@ class NavController:
 
     def step(self, time_s: float, robot: RobotState, goal_xy: np.ndarray,
              tracks: list[Track], detections: list[Detection],
-             last_scan_time_s: Optional[float]) -> NavCommand:
+             last_scan_time_s: Optional[float], heading_target_xy=None) -> NavCommand:
         """Advance the FSM to sim time `time_s` and return the (slew-limited) body-frame command.
 
         Args:
@@ -126,6 +126,7 @@ class NavController:
             tracks: tracker output (only confirmed tracks are used, predictive mode).
             detections: latest clustered detections (reactive mode only).
             last_scan_time_s: sim time of the newest processed scan, or None if none yet.
+            heading_target_xy: optional scan-route waypoint; goal completion uses goal_xy.
         Returns:
             NavCommand(vx, vy=0, yaw_rate, mode=<FSM state>).
         """
@@ -143,6 +144,15 @@ class NavController:
         pose_ok = bool(np.all(np.isfinite(xy)) and math.isfinite(float(robot.yaw_rad)))
         vx_nom, wz_nom, goal_dist = self._heading_control(xy, float(robot.yaw_rad), goal_xy) \
             if pose_ok else (0.0, 0.0, float("nan"))
+        route_blocked = False
+        if pose_ok and heading_target_xy is not None:
+            vx_nom, wz_nom, route_dist = self._heading_control(xy, float(robot.yaw_rad), heading_target_xy)
+            direction = np.asarray(heading_target_xy) - xy
+            error = float(_wrap_angle(math.atan2(direction[1], direction[0]) - float(robot.yaw_rad)))
+            vx_nom *= max(0.0, 1.0 - abs(error) / 0.45)
+            if route_dist < 1e-6:
+                vx_nom, wz_nom = 0.0, 0.0
+                route_blocked = True
 
         # ---- 1. goal reached (latched) ------------------------------------------------
         if pose_ok and goal_dist <= self.goal_tol:
@@ -173,6 +183,12 @@ class NavController:
             self.state = STOP_SENSOR_FAILURE
             self._risk_free_since = None
             dbg["reason"] = fail_reason
+            return self._emit(0.0, 0.0, dt, dbg)
+
+        if route_blocked:
+            self.state = YIELD
+            self._risk_free_since = None
+            dbg["reason"] = "no free route in range-scan map"
             return self._emit(0.0, 0.0, dt, dbg)
 
         # ---- 4. risk (the ONLY mode-specific part) -------------------------------------

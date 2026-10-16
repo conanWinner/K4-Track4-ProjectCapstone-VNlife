@@ -5,6 +5,7 @@ Ground-truth actor positions are drawn ONLY here (labelled "GT (eval only)").
 from __future__ import annotations
 
 from pathlib import Path
+import json
 
 import matplotlib
 
@@ -43,6 +44,9 @@ def plot_episode_topdown(csv_path, out_png, cfg: dict) -> Path:
     contacts (red x). Returns the PNG path.
     """
     df = pd.read_csv(csv_path)
+    metadata_path = Path(csv_path).with_name("metadata.json")
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.exists() else {}
+    cfg = metadata.get("config", cfg)
     w = cfg["world"]
     hw = float(w["corridor_half_width_m"])
     x0 = float(w.get("corridor_x_min_m", -1.5))
@@ -52,6 +56,12 @@ def plot_episode_topdown(csv_path, out_png, cfg: dict) -> Path:
     fig, ax = plt.subplots(figsize=(10, 4.8))
     for y in (-hw, hw):
         ax.plot([x0, x1], [y, y], color="black", lw=3, solid_capstyle="butt")
+    for i, obstacle in enumerate(metadata.get("scenario_cfg", {}).get("obstacles", [])):
+        x, y = obstacle["xy"]
+        sx, sy = obstacle["size"][:2]
+        ax.add_patch(plt.Rectangle((x - sx, y - sy), 2 * sx, 2 * sy,
+                                  color="#3373cc", alpha=0.6,
+                                  label="static obstacles (eval only)" if i == 0 else None))
 
     gx, gy = _col(df, "obstacle_gt_x_eval_only"), _col(df, "obstacle_gt_y_eval_only")
     if np.isfinite(gx).any():
