@@ -22,7 +22,7 @@ rồi nhường đường **trước** khi va chạm. Kết quả được so s�
 |---|---|---|---|
 | **Đoàn Quang Thắng** (Trưởng nhóm) | [conanWinner](https://github.com/conanWinner) | Tích hợp Unitree G1 + vật cản tĩnh | `sim/` (g1_adapter, scene_builder, runner), `navigation/scan_route.py` |
 | Phạm Minh Hiếu | [hieulovecat](https://github.com/hieulovecat) | Perception + Kalman/TCA | `perception/`, `geometry/`, `tracking/`, `prediction/` |
-| Nguyễn Hữu Chương | – | Planner + đánh giá + thuyết trình | `navigation/controller.py`, `evaluation/`, `docs/` |
+| Nguyễn Hữu Chương | [hchuong04](https://github.com/hchuong04) | Planner + đánh giá + thuyết trình | `navigation/controller.py`, `evaluation/`, `docs/` |
 
 Chạy nhanh (Windows PowerShell):
 
